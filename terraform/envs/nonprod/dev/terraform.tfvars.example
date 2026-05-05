@@ -1,0 +1,190 @@
+common = {
+  env         = "dev"
+  project     = "lab"
+  libvirt_uri = "qemu:///system"
+
+  pool = {
+    name = "lab"
+    path = "/var/lib/libvirt/images/lab"
+  }
+
+  base_image_path = "/var/lib/libvirt/images/noble-server-cloudimg-amd64.img"
+
+  access = {
+    ssh_user       = "your-user"
+    ssh_public_key = "ssh-ed25519 AAAA_REPLACE_WITH_YOUR_PUBLIC_KEY your-comment"
+    ssh_password   = "CHANGE_ME_STRONG_PASSWORD"
+
+    ansible_private_key_path = "/home/your-user/.ssh/id_ed25519"
+  }
+}
+
+vms = {
+  vm01 = {
+    vm_name        = "VM1"
+    bridge_network = "br_VM1"
+
+    vcpu    = 4
+    ram_mib = 2048
+    disk_gb = 20
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.10.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.10.0/24"
+    ip   = "10.10.10.150"
+    gw   = "10.10.10.1"
+    mac  = "52:54:00:e0:63:60"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+
+  gitlab = {
+    vm_name        = "gitlab-cicd-onpremise"
+    bridge_network = "br_VM1"
+
+    vcpu    = 4
+    ram_mib = 8192
+    disk_gb = 50
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.10.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.10.0/24"
+    ip   = "10.10.10.111"
+    gw   = "10.10.10.1"
+    mac  = "52:54:00:e0:63:20"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+
+  gitlabrunner = {
+    vm_name        = "gitlab-cicd-runner"
+    bridge_network = "br_VM1"
+
+    vcpu    = 4
+    ram_mib = 8192
+    disk_gb = 50
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.10.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.10.0/24"
+    ip   = "10.10.10.112"
+    gw   = "10.10.10.1"
+    mac  = "52:54:00:e0:63:22"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+
+  vmtest = {
+    vm_name        = "VMtest"
+    bridge_network = "br_VMtest"
+
+    vcpu    = 4
+    ram_mib = 2048
+    disk_gb = 20
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.30.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.30.0/24"
+    ip   = "10.10.30.150"
+    gw   = "10.10.30.1"
+    mac  = "52:54:00:e0:63:10"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+
+  vm02 = {
+    vm_name        = "VM2"
+    bridge_network = "br_VM2"
+
+    vcpu    = 1
+    ram_mib = 4048
+    disk_gb = 20
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.20.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.20.0/24"
+    ip   = "10.10.20.150"
+    gw   = "10.10.20.1"
+    mac  = "52:54:00:e0:63:61"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+
+  vm05 = {
+    vm_name        = "VM5"
+    bridge_network = "br_VM1"
+
+    vcpu    = 2
+    ram_mib = 2048
+    disk_gb = 20
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.10.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.10.0/24"
+    ip   = "10.10.10.152"
+    gw   = "10.10.10.1"
+    mac  = "52:54:00:e0:63:68"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+
+  vm03 = {
+    vm_name        = "VM3"
+    bridge_network = "br_VM1"
+
+    vcpu    = 2
+    ram_mib = 2048
+    disk_gb = 20
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.10.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.10.0/24"
+    ip   = "10.10.10.151"
+    gw   = "10.10.10.1"
+    mac  = "52:54:00:e0:63:62"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+
+  vm04 = {
+    vm_name        = "VM4"
+    bridge_network = "br_VM4"
+
+    vcpu    = 1
+    ram_mib = 6048
+    disk_gb = 20
+
+    net_ip = {
+      family  = "ipv4"
+      address = "10.10.40.1"
+      prefix  = 24
+    }
+
+    cidr = "10.10.40.0/24"
+    ip   = "10.10.40.151"
+    gw   = "10.10.40.1"
+    mac  = "52:54:00:e0:63:64"
+    dns  = ["8.8.8.8", "1.1.1.1"]
+  }
+}
