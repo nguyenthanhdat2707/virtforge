@@ -1,0 +1,14 @@
+[lab_vms]
+vm1 ansible_host=10.10.10.150
+gitlab ansible_host=10.10.10.111
+gitlab_runner ansible_host=10.10.10.112
+vm2 ansible_host=10.10.20.150
+vm3 ansible_host=10.10.10.151
+vm4 ansible_host=10.10.40.151
+vm5 ansible_host=10.10.10.152
+vmtest ansible_host=10.10.30.150
+
+[lab_vms:vars]
+ansible_user=your-user
+ansible_ssh_private_key_file=/home/your-user/.ssh/id_ed25519
+ansible_python_interpreter=/usr/bin/python3

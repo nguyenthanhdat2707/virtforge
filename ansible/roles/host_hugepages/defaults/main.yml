@@ -1,0 +1,7 @@
+---
+hugepages_enabled: false
+hugepages_size_mib: 2
+hugepages_count: 0
+hugepages_total_mib: 0
+hugepages_max_host_ram_percent: 75
+hugepages_sysctl_file: /etc/sysctl.d/99-jdi-hugepages.conf

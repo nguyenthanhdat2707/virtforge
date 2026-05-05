@@ -1,0 +1,8 @@
+---
+- name: Check lab VM connectivity
+  hosts: lab_vms
+  gather_facts: false
+
+  tasks:
+    - name: Ping VM over SSH
+      ansible.builtin.ping:

@@ -1,0 +1,45 @@
+---
+- name: Skip hugepages host preparation when disabled
+  ansible.builtin.debug:
+    msg: "No hugepages-enabled VM was found; host hugepages preparation skipped."
+  when: not hugepages_enabled | bool
+
+- name: Prepare 2 MiB hugepages
+  when: hugepages_enabled | bool
+  block:
+    - name: Validate hugepages input
+      ansible.builtin.assert:
+        that:
+          - hugepages_size_mib | int == 2
+          - hugepages_count | int > 0
+          - hugepages_total_mib | int > 0
+        fail_msg: "This role currently manages 2 MiB hugepages only. Use scripts/hugepages-plan.sh to generate valid values."
+
+    - name: Guard against reserving too much host RAM
+      ansible.builtin.assert:
+        that:
+          - hugepages_total_mib | int <= ((ansible_memtotal_mb | int) * (hugepages_max_host_ram_percent | int) / 100) | int
+        fail_msg: "Requested hugepages exceed {{ hugepages_max_host_ram_percent }}% of host RAM."
+
+    - name: Persist hugepages sysctl
+      ansible.builtin.copy:
+        dest: "{{ hugepages_sysctl_file }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by Ansible for the JDI libvirt lab.
+          vm.nr_hugepages={{ hugepages_count | int }}
+
+    - name: Apply hugepages sysctl
+      ansible.builtin.command: "sysctl -p {{ hugepages_sysctl_file }}"
+      changed_when: false
+
+    - name: Show hugepages status
+      ansible.builtin.command: "grep -E 'HugePages_(Total|Free|Rsvd|Surp)|Hugepagesize' /proc/meminfo"
+      changed_when: false
+      register: hugepages_meminfo
+
+    - name: Print hugepages status
+      ansible.builtin.debug:
+        var: hugepages_meminfo.stdout_lines

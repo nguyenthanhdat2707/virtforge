@@ -1,47 +1,43 @@
-# JDI Project
+# Terraform Libvirt Lab
 
-Repo này dựng lab VM local bằng Terraform provider `libvirt`. Module chính nằm ở `terraform/modules/vm_stack`, environment đang dùng nằm ở `terraform/envs/nonprod/dev`.
+Dự án này là **lab hạ tầng local bằng Terraform** để tự động tạo nhiều VM KVM/libvirt trên máy cá nhân.
 
-## Không commit dữ liệu nhạy cảm
+Nó làm được:
 
-Các file sau chỉ nên nằm local trên máy chạy lab:
+* Tạo storage pool cho disk VM.
+* Tạo network NAT libvirt với IP tĩnh.
+* Tạo VM từ Ubuntu cloud image.
+* Dùng cloud-init để cấu hình hostname, user, SSH key, password, static IP.
+* Bật hugepages optional cho từng VM nặng như GitLab hoặc runner.
+* Có sẵn cấu trúc module Terraform rõ ràng.
+* Có Ansible inventory/playbook để test kết nối sau khi tạo VM.
+* Có Ansible playbook để chuẩn bị hugepages trên host trước khi apply VM.
+* Có GitLab CI để check Terraform format, validate và Ansible syntax.
 
-- `terraform.tfvars`: chứa user, password, SSH key/path và IP/MAC lab.
-- `terraform.tfstate`, `terraform.tfstate.backup`: Terraform state có thể chứa cloud-init user data, bao gồm password dạng plain text.
-- `.terraform/`: provider cache, máy mới chạy `terraform init` để tải lại.
+Không commit các file local nhạy cảm như `terraform.tfvars`, `terraform.tfstate`, `terraform.tfstate.backup`, `.terraform/`, `.terraform.d/plugin-cache/`, SSH key hoặc file output có chứa password/token.
 
-File mẫu an toàn để copy là `terraform/envs/nonprod/dev/terraform.tfvars.example`.
-
-## Yêu cầu trên máy mới
-
-- Terraform `>= 1.3.0`.
-- QEMU/KVM + libvirt đang chạy.
-- User chạy Terraform có quyền dùng `qemu:///system`.
-- Base cloud image tồn tại trên máy, ví dụ:
-
-```bash
-/var/lib/libvirt/images/noble-server-cloudimg-amd64.img
-```
-
-Nếu dùng path khác, sửa `base_image_path` trong `terraform.tfvars`.
-
-## Cách chạy
-
-Từ root repo:
+Cách dùng ngắn gọn:
 
 ```bash
 cp terraform/envs/nonprod/dev/terraform.tfvars.example terraform/envs/nonprod/dev/terraform.tfvars
 ```
 
-Sửa các giá trị trong `terraform/envs/nonprod/dev/terraform.tfvars`:
+Sửa file:
 
-- `ssh_user`
-- `ssh_public_key`
-- `ssh_password`
-- `ansible_private_key_path`
-- `pool.path`
-- `base_image_path`
-- IP/MAC nếu mạng lab trên máy mới khác
+```bash
+terraform/envs/nonprod/dev/terraform.tfvars
+```
+
+Điền các giá trị local như:
+
+* user SSH
+* SSH public key
+* password VM
+* đường dẫn private key Ansible
+* đường dẫn storage pool
+* đường dẫn Ubuntu cloud image
+* IP/MAC nếu cần đổi
+* `hugepages` nếu VM nào cần dùng hugepages
 
 Sau đó chạy:
 
@@ -53,6 +49,79 @@ terraform plan
 terraform apply
 ```
 
-## Ghi chú về password
+Khi VM đã lên, test bằng Ansible:
 
-Cloud-init hiện vẫn tạo password cho user để dễ login qua console/VNC. Template đang để `ssh_pwauth: false`, nên SSH password auth không được bật; SSH nên dùng public key. Nếu muốn login SSH bằng password, cần đổi rõ trong `terraform/modules/vm_stack/templates/user-data.yaml.tftpl`.
+```bash
+cp ansible/inventory/hosts.ini.example ansible/inventory/hosts.ini
+ansible-playbook -i ansible/inventory/hosts.ini ansible/playbook/ping.yml
+```
+
+Nếu muốn bật hugepages cho VM nặng, khai báo trong `terraform.tfvars`:
+
+```hcl
+hugepages = {
+  enabled = true
+}
+```
+
+Sau đó tính số hugepages cần reserve và chuẩn bị host:
+
+```bash
+bash scripts/hugepages-plan.sh \
+  --tfvars terraform/envs/nonprod/dev/terraform.tfvars \
+  --write ansible/inventory/hugepages.auto.json
+
+ansible-playbook \
+  -i localhost, \
+  ansible/playbook/prepare-hugepages.yml \
+  -e @ansible/inventory/hugepages.auto.json \
+  --ask-become-pass
+```
+
+Chi tiết thêm nằm ở `docs/architecture.md`, `docs/hugepages.md`, và `docs/screenshots/README.md`.
+
+## GitLab CI Image và Cache
+
+Repo có custom CI image tại `ci/Dockerfile`. Image này bake sẵn các tool nền tảng ít đổi:
+
+* Terraform
+* Ansible core
+* Python/pip
+* jq, curl, unzip
+* libvirt-dev, pkg-config
+* openssh-client
+
+Image được build/push lên GitLab Container Registry:
+
+```text
+$CI_REGISTRY_IMAGE/iac-ci:latest
+```
+
+Với project hiện tại, image tương ứng là:
+
+```text
+10.10.10.111:5050/root/virtforge/iac-ci:latest
+```
+
+Job `validate_iac` dùng image này nên không còn `apt-get install` tool trong mỗi lần validate. GitLab Runner sẽ pull image từ Container Registry khi job chạy.
+
+Pipeline chia trách nhiệm như sau:
+
+* Tool hệ thống ổn định: bake vào `ci/Dockerfile`.
+* Dependency theo project: cache bằng GitLab CI.
+* Secret/state/runtime data: không bake vào image, không commit vào repo.
+
+Cache GitLab CI chỉ dùng cho:
+
+* `.terraform.d/plugin-cache/`: Terraform provider/plugin cache.
+* `.cache/pip/`: pip cache.
+
+Terraform providers, `.terraform/`, Terraform state, `terraform.tfvars`, secrets và runtime data không được bake vào image.
+
+Job `build_iac_ci_image` chỉ chạy khi `ci/Dockerfile` thay đổi hoặc khi bấm manual. Job này login registry bằng biến GitLab CI có sẵn: `CI_REGISTRY`, `CI_REGISTRY_USER`, `CI_REGISTRY_PASSWORD`; không hardcode username/password.
+
+CI chỉ chạy `fmt`, `validate`, và Ansible syntax-check. CI không chạy `terraform apply` vì apply cần host libvirt thật và có thể thay đổi VM/network trên máy đó.
+
+Nếu registry nội bộ dùng HTTP tại `10.10.10.111:5050`, Docker daemon của GitLab Runner có thể cần cấu hình insecure registry cho địa chỉ này trước khi pull/push image.
+
+Tóm lại: **repo này chứng minh bạn biết dùng Terraform để dựng lab VM local có network, cloud-init, secrets tách riêng, CI kiểm tra IaC, Ansible để verify sau khi provision, và host performance tuning bằng hugepages.**

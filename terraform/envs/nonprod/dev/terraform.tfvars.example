@@ -49,6 +49,10 @@ vms = {
     ram_mib = 8192
     disk_gb = 50
 
+    hugepages = {
+      enabled = true
+    }
+
     net_ip = {
       family  = "ipv4"
       address = "10.10.10.1"
@@ -69,6 +73,11 @@ vms = {
     vcpu    = 4
     ram_mib = 8192
     disk_gb = 50
+
+    hugepages = {
+      enabled  = true
+      size_mib = 2
+    }
 
     net_ip = {
       family  = "ipv4"

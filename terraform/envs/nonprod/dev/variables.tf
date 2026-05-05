@@ -41,6 +41,12 @@ variable "vms" {
     ram_mib = number
     disk_gb = number
 
+    hugepages = optional(object({
+      enabled  = optional(bool, false)
+      size_mib = optional(number, 2)
+      nodeset  = optional(string)
+    }), {})
+
     # per-VM static IP config (cloud-init)
     cidr = string
     ip   = string
@@ -48,4 +54,12 @@ variable "vms" {
     mac  = string
     dns  = list(string)
   }))
+
+  validation {
+    condition = alltrue([
+      for _, vm in var.vms :
+      !vm.hugepages.enabled || (vm.hugepages.size_mib > 0 && vm.ram_mib % vm.hugepages.size_mib == 0)
+    ])
+    error_message = "When hugepages are enabled, ram_mib must be divisible by hugepages.size_mib."
+  }
 }

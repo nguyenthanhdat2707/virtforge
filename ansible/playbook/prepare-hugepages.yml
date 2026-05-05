@@ -1,0 +1,9 @@
+---
+- name: Prepare host hugepages for libvirt VMs
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  become: true
+
+  roles:
+    - role: host_hugepages

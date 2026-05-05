@@ -1,5 +1,6 @@
 # Terraform runtime data
 **/.terraform/*
+.terraform.d/
 *.tfstate
 *.tfstate.*
 crash.log
@@ -22,6 +23,7 @@ terraform.rc
 .env
 .env.*
 !.env.example
+.cache/
 *.pem
 *.key
 id_rsa
@@ -30,6 +32,8 @@ id_ed25519
 
 # Ansible runtime artifacts
 *.retry
+ansible/inventory/hosts.ini
+ansible/inventory/hugepages.auto.json
 
 # Editor / OS noise
 .DS_Store

@@ -1,0 +1,35 @@
+.git/
+.github/
+
+# Terraform runtime, state, and provider cache
+**/.terraform/
+.terraform.d/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+crash.log
+crash.*.log
+
+# Local caches
+.cache/
+**/__pycache__/
+
+# Secrets and machine-local config
+.env
+.env.*
+*.pem
+*.key
+id_rsa
+id_ed25519
+*.pub
+ansible/inventory/hosts.ini
+ansible/inventory/hugepages.auto.json
+
+# Editor / OS noise
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo

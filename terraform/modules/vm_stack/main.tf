@@ -112,6 +112,18 @@ resource "libvirt_domain" "vm" {
   running     = true
   autostart   = true
 
+  memory_backing = each.value.hugepages.enabled ? {
+    memory_huge_pages = {
+      hugepages = [
+        {
+          size    = each.value.hugepages.size_mib
+          unit    = "MiB"
+          nodeset = each.value.hugepages.nodeset
+        }
+      ]
+    }
+  } : null
+
   os = {
     type         = "hvm"
     type_arch    = "x86_64"
@@ -184,4 +196,14 @@ output "networks_created" {
 
 output "vm_to_network" {
   value = { for k, v in var.vms : k => v.bridge_network }
+}
+
+output "vm_hugepages" {
+  value = {
+    for k, v in var.vms : k => {
+      ram_mib  = v.ram_mib
+      size_mib = v.hugepages.size_mib
+      nodeset  = v.hugepages.nodeset
+    } if v.hugepages.enabled
+  }
 }
