@@ -25,6 +25,7 @@ build_iac_ci_image:
   services:
     - name: docker:27-dind
       alias: docker
+      command: ["--insecure-registry=10.10.10.111:5050"]
   variables:
     DOCKER_DRIVER: overlay2
     DOCKER_HOST: tcp://docker:2375
